@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: cicd-pipeline
+Implementation-Version: 0.0.1-SNAPSHOT
+Built-By: 986130
+Implementation-Vendor-Id: org.devops
+Build-Jdk: 1.8.0_251
+Implementation-URL: https://projects.spring.io/spring-boot/#/spring-bo
+ ot-starter-parent/cicd-pipeline
+Created-By: Maven Integration for Eclipse
+
