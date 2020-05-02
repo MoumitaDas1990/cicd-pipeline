@@ -42,6 +42,11 @@
             <version>5.3.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-tomcat</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -66,5 +71,6 @@
                 </configuration>
             </plugin>
         </plugins>
+        <finalName>${artifactId}</finalName>
     </build>
 </project>
