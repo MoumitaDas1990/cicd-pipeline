@@ -18,10 +18,10 @@ pipeline {
         git 'https://github.com/MoumitaDas1990/cicd-pipeline.git'
       }
     }
-    stage('Build') {
+    stage('Build and test') {
       steps {
         withEnv(["MVN_HOME=$mvnHome"]) {
-			sh '"$MVN_HOME/bin/mvn" -Dmaven.test.failure.ignore clean install'
+			sh '"$MVN_HOME/bin/mvn" -Dmaven.test.failure.ignore clean test install'
 		}
 		archiveArtifacts 'target/*.war'
       }
@@ -47,9 +47,24 @@ pipeline {
         }
       }
     }
-    stage('Remove Unused docker image') {
+    stage('Pull Image') {
       steps{
-        sh "docker rmi $registry:$BUILD_NUMBER"
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.pull()
+          }
+        }
+      }
+    }
+    stage('Run Image') {
+      steps{
+        sh "docker run -d $registry:$BUILD_NUMBER"
+        sh "docker ps -a"
+      }
+    }
+    stage('Remove Unused docker containers') {
+      steps{
+        sh "docker container prune --force"
       }
     }
   }
