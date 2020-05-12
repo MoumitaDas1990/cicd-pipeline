@@ -3,12 +3,13 @@ pipeline {
     registry = "moumitadas0991/docker-test"
     registryCredential = 'dockerhub'
     mvnHome = tool 'Maven'
+    sonar = tool 'Sonar'
     dockerImage = ''
-    TOMCAT_USER = "deployuser"
-    TOMCAT_PASSWORD = "123456"
+    TOMCAT_USER = "admin"
+    TOMCAT_PASSWORD = "nimda"
     WAR_PATH = "target/cicd-pipeline.war"
-    TOMCAT_HOST = "tomcat"
-    TOMCAT_PORT = "8080"
+    TOMCAT_HOST = "localhost"
+    TOMCAT_PORT = "8888"
     CONTEX_NAME = "myapp"
   }
   agent any
@@ -21,14 +22,24 @@ pipeline {
     stage('Build and test') {
       steps {
         withEnv(["MVN_HOME=$mvnHome"]) {
-			sh '"$MVN_HOME/bin/mvn" -Dmaven.test.failure.ignore clean test install'
+			bat(/"%MVN_HOME%\bin\mvn" -Dmaven.test.failure.ignore clean install/)
 		}
 		archiveArtifacts 'target/*.war'
       }
     }
+    stage('Run sonar') {
+      steps {
+         withSonarQubeEnv('Sonar') {
+			bat("\"${sonar}\"\\bin\\sonar-scanner")
+		}
+		  timeout(time: 10, unit: 'MINUTES') {
+            waitForQualityGate abortPipeline: true
+        }
+      }
+    }
     stage('Deploy tomcat') {
       steps {
-        sh 'curl -v -u $TOMCAT_USER:$TOMCAT_PASSWORD -T $WAR_PATH "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=/$CONTEX_NAME&update=true"'
+        bat('curl -v -u deployuser:123456 -T target/cicd-pipeline.war "http://localhost:8888/manager/text/deploy?path=/myapp&update=true"')
       }
     }
     stage('Building image') {
@@ -47,25 +58,18 @@ pipeline {
         }
       }
     }
-    stage('Pull Image') {
-      steps{
-        script {
-          docker.withRegistry( '', registryCredential ) {
-            dockerImage.pull()
-          }
-        }
-      }
-    }
-    stage('Run Image') {
-      steps{
-        sh "docker run -d $registry:$BUILD_NUMBER"
-        sh "docker ps -a"
-      }
-    }
     stage('Remove Unused docker containers') {
       steps{
-        sh "docker container prune --force"
+        bat("docker container prune --force")
       }
     }
   }
+  post {
+        always {
+          step([$class: 'Mailer',
+            notifyEveryUnstableBuild: true,
+            recipients: "moumitadas0991@gmail.com",
+            sendToIndividuals: true])
+        }
+    }
 }
